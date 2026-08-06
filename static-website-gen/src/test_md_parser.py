@@ -4,6 +4,8 @@ from md_parser import (
     extract_markdown_images,
     extract_markdown_links,
     split_nodes_delimiter,
+    split_nodes_image,
+    split_nodes_link,
 )
 from textnode import TextNode, TextType
 
@@ -109,7 +111,6 @@ class TestSplitNode(unittest.TestCase):
             TextNode("this is **super** cool", TextType.ITALIC),
         ]
         actual_res_mid = split_nodes_delimiter(t, "_", TextType.ITALIC)
-
         self.assertListEqual(actual_res_mid, expected_res_mid)
 
         expected_res_final = [
@@ -159,4 +160,111 @@ class TestExtractMDLinks(unittest.TestCase):
                 ("to youtube", "https://www.youtube.com/@bootdotdev"),
             ],
             extract_markdown_links(text),
+        )
+
+
+class TextSplitTextNodeImages(unittest.TestCase):
+    def test_split_images_one(self):
+        node = TextNode(
+            "This is text with an ![image](https://i.imgur.com/zjjcJKZ.png)",
+            TextType.TEXT,
+        )
+        new_nodes = split_nodes_image([node])
+        self.assertEqual(
+            [
+                TextNode("This is text with an ", TextType.TEXT),
+                TextNode("image", TextType.IMAGE, "https://i.imgur.com/zjjcJKZ.png"),
+            ],
+            new_nodes,
+        )
+
+    def test_split_images_one_no_text(self):
+        node = TextNode(
+            "![image](https://i.imgur.com/zjjcJKZ.png)",
+            TextType.TEXT,
+        )
+        new_nodes = split_nodes_image([node])
+        self.assertEqual(
+            [
+                TextNode("image", TextType.IMAGE, "https://i.imgur.com/zjjcJKZ.png"),
+            ],
+            new_nodes,
+        )
+
+    def test_split_images_one_newline(self):
+        node = TextNode(
+            "This here is our image:\n![image](https://i.imgur.com/zjjcJKZ.png)",
+            TextType.TEXT,
+        )
+        new_nodes = split_nodes_image([node])
+        self.assertEqual(
+            [
+                TextNode("This here is our image:\n", TextType.TEXT),
+                TextNode("image", TextType.IMAGE, "https://i.imgur.com/zjjcJKZ.png"),
+            ],
+            new_nodes,
+        )
+
+    def test_split_images_multiple(self):
+        node = TextNode(
+            "This is text with an ![image](https://i.imgur.com/zjjcJKZ.png) and another ![second image](https://i.imgur.com/3elNhQu.png)",
+            TextType.TEXT,
+        )
+        new_nodes = split_nodes_image([node])
+        self.assertListEqual(
+            [
+                TextNode("This is text with an ", TextType.TEXT),
+                TextNode("image", TextType.IMAGE, "https://i.imgur.com/zjjcJKZ.png"),
+                TextNode(" and another ", TextType.TEXT),
+                TextNode(
+                    "second image", TextType.IMAGE, "https://i.imgur.com/3elNhQu.png"
+                ),
+            ],
+            new_nodes,
+        )
+
+    def test_split_images_but_link_ip(self):
+        node = [
+            TextNode(
+                "This is text with an [link](https://i.imgur.com/)",
+                TextType.TEXT,
+            )
+        ]
+        new_nodes = split_nodes_image(node)
+        self.assertEqual(
+            node,
+            new_nodes,
+        )
+
+
+class TextSplitTextNodeLinks(unittest.TestCase):
+    def test_split_links_one(self):
+        node = TextNode(
+            "This is text with an [link](https://i.imgur.com/)",
+            TextType.TEXT,
+        )
+        new_nodes = split_nodes_link([node])
+        self.assertEqual(
+            [
+                TextNode("This is text with an ", TextType.TEXT),
+                TextNode("link", TextType.LINK, "https://i.imgur.com/"),
+            ],
+            new_nodes,
+        )
+
+    def test_split_links_multiple(self):
+        node = TextNode(
+            "This is text with an [link](https://i.imgur.com/) and another [link](https://i.imgur.com/)",
+            TextType.TEXT,
+        )
+        new_nodes = split_nodes_link([node])
+
+        self.assertEqual(
+            [
+                TextNode("This is text with an ", TextType.TEXT),
+                TextNode("link", TextType.LINK, "https://i.imgur.com/"),
+                TextNode(" and another ", TextType.TEXT),
+                TextNode("link", TextType.LINK, "https://i.imgur.com/"),
+            ],
+            new_nodes,
         )

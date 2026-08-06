@@ -82,11 +82,67 @@ def extract_markdown_links(text: str) -> list[tuple[str, str]]:
     return list(zip(alt_texts, links))
 
 
+def split_nodes_link(old_nodes: list[TextNode]) -> list[TextNode]:
+
+    new_nodes = []
+    for node in old_nodes:
+        l = 0
+        n = len(node.content)
+        text = node.content
+        while l < n:
+            search_res = re.search(r"\[[^\]]*\]\s*\(.*?\)", text[l:])
+            if not search_res:
+                if l != 0:
+                    new_nodes.append(TextNode(text[l:], node.type))
+                else:
+                    new_nodes.append(node)
+                break
+
+            start_idx = search_res.start() + l
+            end_idx = search_res.end() + l
+
+            if start_idx != l:
+                new_nodes.append(TextNode(text[l:start_idx], node.type))
+
+            alt_text, link = extract_markdown_links(text[start_idx:end_idx])[0]
+            new_nodes.append(TextNode(alt_text, type=TextType.LINK, link=link))
+            l = end_idx
+    return new_nodes
+
+
+def split_nodes_image(old_nodes: list[TextNode]) -> list[TextNode]:
+
+    new_nodes = []
+    for node in old_nodes:
+        l = 0
+        n = len(node.content)
+        text = node.content
+        iter = 1
+        while l < n:
+            search_res = re.search(r"!\[[^\]]*\]\s*\(.*?\)", text[l:])
+            if not search_res:
+                if l != 0:
+                    new_nodes.append(TextNode(text[l:], node.type))
+                else:
+                    new_nodes.append(node)
+                break
+
+            start_idx = search_res.start() + l
+            end_idx = search_res.end() + l
+            # print(f"{iter}:({start_idx + l},{end_idx + l})")
+
+            if start_idx != l:
+                new_nodes.append(TextNode(text[l:start_idx], node.type))
+
+            alt_text, image = extract_markdown_images(text[start_idx:end_idx])[0]
+            new_nodes.append(TextNode(alt_text, type=TextType.IMAGE, link=image))
+            l = end_idx
+            iter += 1
+    return new_nodes
+
+
 # t = TextNode("Hi this is a **Test Babes", TextType.TEXT)
 # t1 = TextNode("Hi this is a Test Babes", TextType.TEXT)
 # t2 = TextNode("**Hi** this is a Test Babes", TextType.TEXT)
 # t3 = TextNode("**", TextType.TEXT)
 # print(split_nodes_delimiter([t, t1, t2, t3], "**", TextType.BOLD))
-
-text = "This is text with a link [to boot dev](https://www.boot.dev) and [to youtube](https://www.youtube.com/@bootdotdev)"
-print(extract_markdown_links(text))
