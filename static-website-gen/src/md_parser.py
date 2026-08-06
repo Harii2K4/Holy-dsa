@@ -1,3 +1,5 @@
+import re
+
 from textnode import TextNode, TextType
 
 
@@ -65,8 +67,26 @@ def split_nodes_delimiter(
     return new_nodes
 
 
-t = TextNode("Hi this is a **Test Babes", TextType.TEXT)
-t1 = TextNode("Hi this is a Test Babes", TextType.TEXT)
-t2 = TextNode("**Hi** this is a Test Babes", TextType.TEXT)
-t3 = TextNode("**", TextType.TEXT)
-print(split_nodes_delimiter([t, t1, t2, t3], "**", TextType.BOLD))
+def extract_markdown_images(text: str) -> list[tuple[str, str]]:
+
+    alt_texts = re.findall(r"(?<=\!)\[(.*?)\](?= *\(.*?\))", text)
+    img_links = re.findall(r"!\[[^\]]*\]\s*\((.*?)\)", text)
+
+    return list(zip(alt_texts, img_links))
+
+
+def extract_markdown_links(text: str) -> list[tuple[str, str]]:
+    alt_texts = re.findall(r"\[(.*?)\](?= *\(.*?\))", text)
+    links = re.findall(r"\[[^\]]*\]\s*\((.*?)\)", text)
+
+    return list(zip(alt_texts, links))
+
+
+# t = TextNode("Hi this is a **Test Babes", TextType.TEXT)
+# t1 = TextNode("Hi this is a Test Babes", TextType.TEXT)
+# t2 = TextNode("**Hi** this is a Test Babes", TextType.TEXT)
+# t3 = TextNode("**", TextType.TEXT)
+# print(split_nodes_delimiter([t, t1, t2, t3], "**", TextType.BOLD))
+
+text = "This is text with a link [to boot dev](https://www.boot.dev) and [to youtube](https://www.youtube.com/@bootdotdev)"
+print(extract_markdown_links(text))
