@@ -68,7 +68,7 @@ class ParentNode(HtmlNode):
             content += f"\nvalue:{self.value}"
         if self.attributes:
             content += f"\nattr:{self.attributes}"
-        content += f"\nchildren:{self.attributes}"
+        content += f"\nchildren:{self.children}"
         return f"ParentNode({content}\n)"
 
     def to_html(self) -> str:
@@ -88,30 +88,30 @@ class ParentNode(HtmlNode):
         return output + f"</{self.tag}>"
 
 
-list_ul = ParentNode(
-    tag="ul",
-    children=[
-        LeafNode("li", value="Item 1"),
-        LeafNode("li", value="Item 2"),
-        LeafNode("li", value="Item 3"),
-        LeafNode("li", value="Item 4"),
-        LeafNode("li", value="Item 5"),
-    ],
-    attributes={"style": "color:red;list-style:None"},
-)
-h1 = ParentNode(
-    tag="p",
-    children=[
-        LeafNode(None, value="This Is "),
-        LeafNode("b", value="Amazing "),
-        LeafNode(None, value="Bro"),
-    ],
-)
-body = ParentNode(
-    tag="body", children=[h1, list_ul], attributes={"style": "background-color:black"}
-)
-head = ParentNode(tag="head", children=[LeafNode("title", value="Statics")])
-html = ParentNode(tag="html", children=[head, body])
-
-with open("test.html", "w") as f:
-    f.write(html.to_html())
+# list_ul = ParentNode(
+#     tag="ul",
+#     children=[
+#         LeafNode("li", value="Item 1"),
+#         LeafNode("li", value="Item 2"),
+#         LeafNode("li", value="Item 3"),
+#         LeafNode("li", value="Item 4"),
+#         LeafNode("li", value="Item 5"),
+#     ],
+#     attributes={"style": "color:red;list-style:None"},
+# )
+# h1 = ParentNode(
+#     tag="p",
+#     children=[
+#         LeafNode(None, value="This Is "),
+#         LeafNode("b", value="Amazing "),
+#         LeafNode(None, value="Bro"),
+#     ],
+# )
+# body = ParentNode(
+#     tag="body", children=[h1, list_ul], attributes={"style": "background-color:black"}
+# )
+# head = ParentNode(tag="head", children=[LeafNode("title", value="Statics")])
+# html = ParentNode(tag="html", children=[head, body])
+#
+# with open("test.html", "w") as f:
+#     f.write(html.to_html())
