@@ -1,6 +1,16 @@
 import re
+from enum import Enum
 
 from textnode import TextNode, TextType
+
+
+class BlockType(Enum):
+    PARAGRAPH = "paragraph"
+    HEADING = "heading"
+    CODE = "code"
+    QUOTE = "quote"
+    UL_LIST = "ul_list"
+    OL_LIST = "ol_list"
 
 
 def test_valid_delimiter(delimiter: str, type: str) -> bool:
@@ -188,27 +198,40 @@ def md_to_block(text: str) -> list[str]:
     return output_blocks
 
 
-md = """This is **bolded** paragraph
+def block_to_block_types(block: str) -> BlockType:
 
-This is another paragraph with _italic_ text and `code` here
-This is the same paragraph on a new line
+    if block.startswith("#"):
+        idx = 0
+        while block[idx] == "#":
+            idx += 1
+        if not idx < 6 or not block[idx] == " ":
+            return BlockType.PARAGRAPH
+        return BlockType.HEADING
 
-- This is a list
-- with items
-"""
+    elif block.startswith("```") and block.endswith("```"):
+        return BlockType.CODE
+    elif block.startswith(">"):
+        lines = block.split("\n")
+        for line in lines[1:]:
+            if not line.startswith(">"):
+                return BlockType.PARAGRAPH
+        return BlockType.QUOTE
+    elif block.startswith("-"):
+        lines = block.split("\n")
+        for line in lines:
+            if not (line.startswith("-") and line[1] == " "):
+                return BlockType.PARAGRAPH
+        return BlockType.UL_LIST
+    elif block.startswith("1"):
+        lines = block.split("\n")
+        line_num = 1
+        for line in lines:
+            if not (
+                line.startswith(str(line_num)) and line[1] == "." and line[2] == " "
+            ):
+                return BlockType.PARAGRAPH
+            line_num += 1
 
-# blocks = md_to_block(md)
-# resExpected = [
-#     "This is **bolded** paragraph",
-#     "This is another paragraph with _italic_ text and `code` here\nThis is the same paragraph on a new line",
-#     "- This is a list\n- with items",
-# ]
-# print(blocks == resExpected)
-# text = "this is a simple markdown **bold** , _italics_ and `code`"
-# print(text_to_textnode(text))
-
-# t = TextNode("Hi this is a **Test Babes", TextType.TEXT)
-# t1 = TextNode("Hi this is a Test Babes", TextType.TEXT)
-# t2 = TextNode("**Hi** this is a Test Babes", TextType.TEXT)
-# t3 = TextNode("**", TextType.TEXT)
-# print(split_nodes_delimiter([t, t1, t2, t3], "**", TextType.BOLD))
+        return BlockType.OL_LIST
+    else:
+        return BlockType.PARAGRAPH

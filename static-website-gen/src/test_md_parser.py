@@ -1,6 +1,8 @@
 import unittest
 
 from md_parser import (
+    BlockType,
+    block_to_block_types,
     md_to_block,
     extract_markdown_images,
     extract_markdown_links,
@@ -345,3 +347,178 @@ This is the same paragraph on a new line
                 "- This is a list\n- with items",
             ],
         )
+
+    def test_md_block_with_code(self):
+
+        md = """
+        #### Number Conversion:
+
+Js converts everything to numbers like everything so we can get stuff like this
+
+```js
+true == '1'
+```
+"""
+        blocks = md_to_block(md)
+
+        self.assertEqual(
+            blocks,
+            [
+                "#### Number Conversion:",
+                "Js converts everything to numbers like everything so we can get stuff like this",
+                "```js\ntrue == '1'\n```",
+            ],
+        )
+
+
+class TestBlockToBlockType(unittest.TestCase):
+    def test_block_to_block_types_proper_blocks(self):
+
+        md = """## This is **bolded** paragraph
+
+        This is another paragraph with _italic_ text and `code` here
+        This is the same paragraph on a new line
+
+        - This is a list
+        - with items
+        """
+        blocks = md_to_block(md)
+        block_types = list(map(block_to_block_types, blocks))
+        res_expected = [BlockType.HEADING, BlockType.PARAGRAPH, BlockType.UL_LIST]
+        self.assertListEqual(block_types, res_expected)
+
+    def test_block_to_block_types_invalid_heading_and_ul(self):
+
+        md = """##This is **bolded** paragraph
+
+        This is another paragraph with _italic_ text and `code` here
+        This is the same paragraph on a new line
+
+        -This is a list
+        -with items
+        """
+        blocks = md_to_block(md)
+        block_types = list(map(block_to_block_types, blocks))
+        res_expected = [BlockType.PARAGRAPH, BlockType.PARAGRAPH, BlockType.PARAGRAPH]
+        self.assertListEqual(block_types, res_expected)
+
+    def test_block_to_block_types_code(self):
+
+        md = """``` python
+        listT=[1,2,3,4,5]
+        print(listT) ```
+        """
+        blocks = md_to_block(md)
+        block_types = list(map(block_to_block_types, blocks))
+        res_expected = [BlockType.CODE]
+        self.assertListEqual(block_types, res_expected)
+
+    def test_block_to_block_valid_block_type(self):
+
+        md = """``` python
+        listT=[1,2,3,4,5]
+        print(listT) ```
+        """
+        blocks = md_to_block(md)
+        block_types = list(map(block_to_block_types, blocks))
+        res_expected = [BlockType.CODE]
+        self.assertListEqual(block_types, res_expected)
+
+    def test_block_to_block_invalid_block_type(self):
+
+        md = """``` python
+        listT=[1,2,3,4,5]
+        print(listT)
+        """
+        blocks = md_to_block(md)
+        block_types = list(map(block_to_block_types, blocks))
+        res_expected = [BlockType.PARAGRAPH]
+        self.assertListEqual(block_types, res_expected)
+
+    def test_md_block_to_block_type_ol_valid(self):
+        md = """
+        # This is a List
+
+        1. python
+        2. c
+        3. go
+        4. ts
+        """
+        blocks = md_to_block(md)
+        block_types = list(map(block_to_block_types, blocks))
+        res_expected = [BlockType.HEADING, BlockType.OL_LIST]
+        self.assertListEqual(block_types, res_expected)
+
+    def test_md_block_to_block_type_ol_invalid_wrong_numbering(self):
+        md = """
+        # This is a List
+
+        1. python
+        3. go
+        4. ts
+        """
+        blocks = md_to_block(md)
+        block_types = list(map(block_to_block_types, blocks))
+        res_expected = [BlockType.HEADING, BlockType.PARAGRAPH]
+        self.assertListEqual(block_types, res_expected)
+
+    def test_md_block_to_block_type_quoted(self):
+        md = """
+        # This is a quote with space
+
+        > Life is race that i intend to enjoy
+
+        # This is a quote without space
+
+        >Life is race that i intend to enjoy
+        """
+        blocks = md_to_block(md)
+        block_types = list(map(block_to_block_types, blocks))
+        res_expected = [
+            BlockType.HEADING,
+            BlockType.QUOTE,
+            BlockType.HEADING,
+            BlockType.QUOTE,
+        ]
+        self.assertListEqual(block_types, res_expected)
+
+    def test_md_block_to_block_type_actual_example_from_obsidian(self):
+        md = """
+        ## Comparisons:
+
+Comparisons are a very useful part of conditionals and are used a lot in conditionals
+
+#### String Comparisons:
+
+ JavaScript uses the so-called “dictionary” or “lexicographical” order.Each char of each string is compared inorder until the end of the strings,
+ if all the chars are equal then,longer string is greater or equal length means equal
+
+It is not really dictionary order it is unicode value order for each char so
+'A' > 'a'  is false as A->65 and a ->97
+
+#### Number Conversion:
+
+Js converts everything to numbers like everything so we can get stuff like this
+
+```js
+true == '1'
+```
+
+because true -> 1 and '1'-> 1 and since it is == and not === (true equals) it works.
+something also funny is this.
+        """
+        blocks = md_to_block(md)
+        self.assertEqual(9, len(blocks))
+        block_types = [block_to_block_types(block) for block in blocks]
+        expected_res = [
+            BlockType.HEADING,
+            BlockType.PARAGRAPH,
+            BlockType.HEADING,
+            BlockType.PARAGRAPH,
+            BlockType.PARAGRAPH,
+            BlockType.HEADING,
+            BlockType.PARAGRAPH,
+            BlockType.CODE,
+            BlockType.PARAGRAPH,
+        ]
+        self.assertListEqual(block_types, expected_res)
