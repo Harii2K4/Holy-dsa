@@ -37,7 +37,7 @@ def split_nodes_delimiter(
             while r < n:
                 try:
                     r = content.index(delimiter, l)
-                except ValueError as v:
+                except ValueError:
                     new_node_content = content[l:]
                     new_nodes.append(TextNode(new_node_content, node.type))
                     break
@@ -51,7 +51,7 @@ def split_nodes_delimiter(
                 l = r
                 try:
                     r = content.index(delimiter, l)
-                except ValueError as v:
+                except ValueError:
                     new_node_content = content[l - inc :]
                     new_nodes.append(TextNode(new_node_content, node.type))
                     break
@@ -140,6 +140,31 @@ def split_nodes_image(old_nodes: list[TextNode]) -> list[TextNode]:
             iter += 1
     return new_nodes
 
+
+def text_to_textnode(text: str) -> list[TextNode]:
+    if not text:
+        return [TextNode(content="", type=TextType.TEXT)]
+
+    start_node = [TextNode(content=text, type=TextType.TEXT)]
+
+    nodes_split_bold = split_nodes_delimiter(
+        start_node, delimiter="**", type=TextType.BOLD
+    )
+    nodes_split_italic = split_nodes_delimiter(
+        nodes_split_bold, delimiter="_", type=TextType.ITALIC
+    )
+    nodes_split_code = split_nodes_delimiter(
+        nodes_split_italic, delimiter="`", type=TextType.CODE
+    )
+
+    node_split_images = split_nodes_image(nodes_split_code)
+    node_split_links = split_nodes_link(node_split_images)
+
+    return node_split_links
+
+
+text = "this is a simple markdown **bold** , _italics_ and `code`"
+print(text_to_textnode(text))
 
 # t = TextNode("Hi this is a **Test Babes", TextType.TEXT)
 # t1 = TextNode("Hi this is a Test Babes", TextType.TEXT)
