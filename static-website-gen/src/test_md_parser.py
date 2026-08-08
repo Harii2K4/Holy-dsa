@@ -26,13 +26,13 @@ class TestSplitNode(unittest.TestCase):
         t = [TextNode("**hello** world", TextType.TEXT)]
         res = [TextNode("hello", TextType.BOLD), TextNode(" world", TextType.TEXT)]
 
-        self.assertListEqual(split_nodes_delimiter(t, "**", TextType.BOLD), res)
+        self.assertListEqual(res, split_nodes_delimiter(t, "**", TextType.BOLD))
 
     def test_split_node_delimiter_bold_end(self):
         t = [TextNode("world **hello**", TextType.TEXT)]
         res = [TextNode("world ", TextType.TEXT), TextNode("hello", TextType.BOLD)]
 
-        self.assertListEqual(split_nodes_delimiter(t, "**", TextType.BOLD), res)
+        self.assertListEqual(res, split_nodes_delimiter(t, "**", TextType.BOLD))
 
     def test_split_node_delimiter_bold_middle(self):
         t = [TextNode("world **hello** end", TextType.TEXT)]
@@ -42,21 +42,21 @@ class TestSplitNode(unittest.TestCase):
             TextNode(" end", TextType.TEXT),
         ]
 
-        self.assertListEqual(split_nodes_delimiter(t, "**", TextType.BOLD), res)
+        self.assertListEqual(res, split_nodes_delimiter(t, "**", TextType.BOLD))
 
     def test_split_node_delimiter_bold_no_closing_delimt(self):
 
         t = [TextNode("**hello end", TextType.TEXT)]
         res = [TextNode("**hello end", TextType.TEXT)]
 
-        self.assertListEqual(split_nodes_delimiter(t, "**", TextType.BOLD), res)
+        self.assertListEqual(res, split_nodes_delimiter(t, "**", TextType.BOLD))
 
     def test_split_node_delimiter_italic_start(self):
 
         t = [TextNode("_hello_ end", TextType.TEXT)]
         res = [TextNode("hello", TextType.ITALIC), TextNode(" end", TextType.TEXT)]
 
-        self.assertListEqual(split_nodes_delimiter(t, "_", TextType.ITALIC), res)
+        self.assertListEqual(res, split_nodes_delimiter(t, "_", TextType.ITALIC))
 
     def test_split_node_delimiter_italic_middle(self):
 
@@ -67,7 +67,7 @@ class TestSplitNode(unittest.TestCase):
             TextNode(" end", TextType.TEXT),
         ]
 
-        self.assertListEqual(split_nodes_delimiter(t, "_", TextType.ITALIC), res)
+        self.assertListEqual(res, split_nodes_delimiter(t, "_", TextType.ITALIC))
 
     def test_split_node_delimiter_code_end(self):
 
@@ -77,7 +77,7 @@ class TestSplitNode(unittest.TestCase):
             TextNode("print('hello world')", TextType.CODE),
         ]
 
-        self.assertListEqual(split_nodes_delimiter(t, "`", TextType.CODE), res)
+        self.assertListEqual(res, split_nodes_delimiter(t, "`", TextType.CODE))
 
     def test_split_node_delimiter_multiline(self):
 
@@ -124,23 +124,23 @@ class TestSplitNode(unittest.TestCase):
             TextNode(" cool", TextType.ITALIC),
         ]
         self.assertListEqual(
-            split_nodes_delimiter(actual_res_mid, "**", TextType.BOLD),
             expected_res_final,
+            split_nodes_delimiter(actual_res_mid, "**", TextType.BOLD),
         )
 
 
 class TestExtractMDImages(unittest.TestCase):
     def test_extract_markdown_images_no_image(self):
         text = "This sentence contains no Markdown image."
-        self.assertListEqual(extract_markdown_images(text), [])
+        self.assertListEqual([], extract_markdown_images(text))
 
     def test_extract_markdown_images_one_img(self):
         text = "![cat](cat.png)"
-        self.assertListEqual(extract_markdown_images(text), [("cat", "cat.png")])
+        self.assertListEqual([("cat", "cat.png")], extract_markdown_images(text))
 
     def test_extract_markdown_images_one_img_space_sep(self):
         text = "![cat] (cat.png)"
-        self.assertListEqual(extract_markdown_images(text), [("cat", "cat.png")])
+        self.assertListEqual([("cat", "cat.png")], extract_markdown_images(text))
 
     def test_extract_markdown_images_two_imgs(self):
         text = "![cat](cat.png) ![dog](dog.png)"
@@ -152,7 +152,7 @@ class TestExtractMDImages(unittest.TestCase):
         matches = extract_markdown_images(
             "This is text with an ![image](https://i.imgur.com/zjjcJKZ.png)"
         )
-        self.assertListEqual([("image", "https://i.imgur.com/zjjcJKZ.png")], matches)
+        self.assertListEqual(matches, [("image", "https://i.imgur.com/zjjcJKZ.png")])
 
 
 class TestExtractMDLinks(unittest.TestCase):
@@ -309,23 +309,23 @@ This is the same paragraph on a new line
         blocks = md_to_block(md)
 
         self.assertEqual(
-            blocks,
             [
                 "This is **bolded** paragraph",
                 "This is another paragraph with _italic_ text and `code` here\nThis is the same paragraph on a new line",
                 "- This is a list\n- with items",
             ],
+            blocks,
         )
 
     def test_md_block_empty(self):
         md = ""
         blocks = md_to_block(md)
-        self.assertListEqual(blocks, [""])
+        self.assertListEqual([""], blocks)
 
     def test_md_block_multiple_newline(self):
         md = "\n\n\n\n"
         blocks = md_to_block(md)
-        self.assertListEqual(blocks, ["", "", "", ""])
+        self.assertListEqual(["", "", "", ""], blocks)
 
     def test_md_block_leading_and_trailing_spaces_and_tabs(self):
         md = """          This is **bolded** paragraph
@@ -340,12 +340,12 @@ This is the same paragraph on a new line
         blocks = md_to_block(md)
 
         self.assertEqual(
-            blocks,
             [
                 "This is **bolded** paragraph",
                 "This is another paragraph with _italic_ text and `code` here\nThis is the same paragraph on a new line",
                 "- This is a list\n- with items",
             ],
+            blocks,
         )
 
     def test_md_block_with_code(self):
@@ -362,12 +362,12 @@ true == '1'
         blocks = md_to_block(md)
 
         self.assertEqual(
-            blocks,
             [
                 "#### Number Conversion:",
                 "Js converts everything to numbers like everything so we can get stuff like this",
                 "```js\ntrue == '1'\n```",
             ],
+            blocks,
         )
 
 
@@ -385,7 +385,7 @@ class TestBlockToBlockType(unittest.TestCase):
         blocks = md_to_block(md)
         block_types = list(map(block_to_block_types, blocks))
         res_expected = [BlockType.HEADING, BlockType.PARAGRAPH, BlockType.UL_LIST]
-        self.assertListEqual(block_types, res_expected)
+        self.assertListEqual(res_expected, block_types)
 
     def test_block_to_block_types_invalid_heading_and_ul(self):
 
@@ -400,7 +400,7 @@ class TestBlockToBlockType(unittest.TestCase):
         blocks = md_to_block(md)
         block_types = list(map(block_to_block_types, blocks))
         res_expected = [BlockType.PARAGRAPH, BlockType.PARAGRAPH, BlockType.PARAGRAPH]
-        self.assertListEqual(block_types, res_expected)
+        self.assertListEqual(res_expected, block_types)
 
     def test_block_to_block_types_code(self):
 
@@ -411,7 +411,7 @@ class TestBlockToBlockType(unittest.TestCase):
         blocks = md_to_block(md)
         block_types = list(map(block_to_block_types, blocks))
         res_expected = [BlockType.CODE]
-        self.assertListEqual(block_types, res_expected)
+        self.assertListEqual(res_expected, block_types)
 
     def test_block_to_block_valid_block_type(self):
 
@@ -422,7 +422,7 @@ class TestBlockToBlockType(unittest.TestCase):
         blocks = md_to_block(md)
         block_types = list(map(block_to_block_types, blocks))
         res_expected = [BlockType.CODE]
-        self.assertListEqual(block_types, res_expected)
+        self.assertListEqual(res_expected, block_types)
 
     def test_block_to_block_invalid_block_type(self):
 
@@ -433,7 +433,7 @@ class TestBlockToBlockType(unittest.TestCase):
         blocks = md_to_block(md)
         block_types = list(map(block_to_block_types, blocks))
         res_expected = [BlockType.PARAGRAPH]
-        self.assertListEqual(block_types, res_expected)
+        self.assertListEqual(res_expected, block_types)
 
     def test_md_block_to_block_type_ol_valid(self):
         md = """
@@ -447,7 +447,7 @@ class TestBlockToBlockType(unittest.TestCase):
         blocks = md_to_block(md)
         block_types = list(map(block_to_block_types, blocks))
         res_expected = [BlockType.HEADING, BlockType.OL_LIST]
-        self.assertListEqual(block_types, res_expected)
+        self.assertListEqual(res_expected, block_types)
 
     def test_md_block_to_block_type_ol_invalid_wrong_numbering(self):
         md = """
@@ -460,7 +460,7 @@ class TestBlockToBlockType(unittest.TestCase):
         blocks = md_to_block(md)
         block_types = list(map(block_to_block_types, blocks))
         res_expected = [BlockType.HEADING, BlockType.PARAGRAPH]
-        self.assertListEqual(block_types, res_expected)
+        self.assertListEqual(res_expected, block_types)
 
     def test_md_block_to_block_type_quoted(self):
         md = """
@@ -480,7 +480,7 @@ class TestBlockToBlockType(unittest.TestCase):
             BlockType.HEADING,
             BlockType.QUOTE,
         ]
-        self.assertListEqual(block_types, res_expected)
+        self.assertListEqual(res_expected, block_types)
 
     def test_md_block_to_block_type_actual_example_from_obsidian(self):
         md = """
@@ -521,4 +521,4 @@ something also funny is this.
             BlockType.CODE,
             BlockType.PARAGRAPH,
         ]
-        self.assertListEqual(block_types, expected_res)
+        self.assertListEqual(expected_res, block_types)
