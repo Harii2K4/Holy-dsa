@@ -30,37 +30,37 @@ def split_nodes_delimiter(
 
     for node in old_nodes:
         if delimiter in node.content:
-            l, r = 0, 0
+            left, r = 0, 0
             n = len(node.content)
             content = node.content
 
             while r < n:
                 try:
-                    r = content.index(delimiter, l)
+                    r = content.index(delimiter, left)
                 except ValueError:
-                    new_node_content = content[l:]
+                    new_node_content = content[left:]
                     new_nodes.append(TextNode(new_node_content, node.type))
                     break
 
-                new_node_content = content[l:r]
+                new_node_content = content[left:r]
                 # get content upto delimiter
                 if new_node_content:
                     new_nodes.append(TextNode(new_node_content, node.type))
                 # find the closing delimiter
                 r = r + inc
-                l = r
+                left = r
                 try:
-                    r = content.index(delimiter, l)
+                    r = content.index(delimiter, left)
                 except ValueError:
-                    new_node_content = content[l - inc :]
+                    new_node_content = content[left - inc :]
                     new_nodes.append(TextNode(new_node_content, node.type))
                     break
                 # get the content within the delimiters
-                new_node_content = content[l:r]
+                new_node_content = content[left:r]
                 if new_node_content:
                     new_nodes.append(TextNode(new_node_content, type))
                 r = r + inc
-                l = r
+                left = r
         else:
             new_nodes.append(node)
 
@@ -86,27 +86,27 @@ def split_nodes_link(old_nodes: list[TextNode]) -> list[TextNode]:
 
     new_nodes = []
     for node in old_nodes:
-        l = 0
+        left = 0
         n = len(node.content)
         text = node.content
-        while l < n:
-            search_res = re.search(r"\[[^\]]*\]\s*\(.*?\)", text[l:])
+        while left < n:
+            search_res = re.search(r"\[[^\]]*\]\s*\(.*?\)", text[left:])
             if not search_res:
-                if l != 0:
-                    new_nodes.append(TextNode(text[l:], node.type))
+                if left != 0:
+                    new_nodes.append(TextNode(text[left:], node.type))
                 else:
                     new_nodes.append(node)
                 break
 
-            start_idx = search_res.start() + l
-            end_idx = search_res.end() + l
+            start_idx = search_res.start() + left
+            end_idx = search_res.end() + left
 
-            if start_idx != l:
-                new_nodes.append(TextNode(text[l:start_idx], node.type))
+            if start_idx != left:
+                new_nodes.append(TextNode(text[left:start_idx], node.type))
 
             alt_text, link = extract_markdown_links(text[start_idx:end_idx])[0]
             new_nodes.append(TextNode(alt_text, type=TextType.LINK, link=link))
-            l = end_idx
+            left = end_idx
     return new_nodes
 
 
@@ -114,29 +114,29 @@ def split_nodes_image(old_nodes: list[TextNode]) -> list[TextNode]:
 
     new_nodes = []
     for node in old_nodes:
-        l = 0
+        left = 0
         n = len(node.content)
         text = node.content
         iter = 1
-        while l < n:
-            search_res = re.search(r"!\[[^\]]*\]\s*\(.*?\)", text[l:])
+        while left < n:
+            search_res = re.search(r"!\[[^\]]*\]\s*\(.*?\)", text[left:])
             if not search_res:
-                if l != 0:
-                    new_nodes.append(TextNode(text[l:], node.type))
+                if left != 0:
+                    new_nodes.append(TextNode(text[left:], node.type))
                 else:
                     new_nodes.append(node)
                 break
 
-            start_idx = search_res.start() + l
-            end_idx = search_res.end() + l
-            # print(f"{iter}:({start_idx + l},{end_idx + l})")
+            start_idx = search_res.start() + left
+            end_idx = search_res.end() + left
+            # print(f"{iter}:({start_idx + left},{end_idx + left})")
 
-            if start_idx != l:
-                new_nodes.append(TextNode(text[l:start_idx], node.type))
+            if start_idx != left:
+                new_nodes.append(TextNode(text[left:start_idx], node.type))
 
             alt_text, image = extract_markdown_images(text[start_idx:end_idx])[0]
             new_nodes.append(TextNode(alt_text, type=TextType.IMAGE, link=image))
-            l = end_idx
+            left = end_idx
             iter += 1
     return new_nodes
 
@@ -163,8 +163,49 @@ def text_to_textnode(text: str) -> list[TextNode]:
     return node_split_links
 
 
-text = "this is a simple markdown **bold** , _italics_ and `code`"
-print(text_to_textnode(text))
+# we assume that the inputs are well written markdown and blocks are seperated by newlines
+def md_to_block(text: str) -> list[str]:
+    if not text:
+        return [""]
+    lines = text.strip(" ").split("\n")
+    output_blocks = []
+
+    if lines[0]:
+        lines = [""] + lines
+    if lines[-1]:
+        lines.append("")
+
+    left, right = 0, 1
+    n = len(lines)
+    while right < n:
+        while right < n and lines[right].strip(" "):
+            right += 1
+
+        curr_block = [line.strip(" ").strip("\t") for line in lines[left + 1 : right]]
+        output_blocks.append("\n".join(curr_block))
+        left = right
+        right += 1
+    return output_blocks
+
+
+md = """This is **bolded** paragraph
+
+This is another paragraph with _italic_ text and `code` here
+This is the same paragraph on a new line
+
+- This is a list
+- with items
+"""
+
+# blocks = md_to_block(md)
+# resExpected = [
+#     "This is **bolded** paragraph",
+#     "This is another paragraph with _italic_ text and `code` here\nThis is the same paragraph on a new line",
+#     "- This is a list\n- with items",
+# ]
+# print(blocks == resExpected)
+# text = "this is a simple markdown **bold** , _italics_ and `code`"
+# print(text_to_textnode(text))
 
 # t = TextNode("Hi this is a **Test Babes", TextType.TEXT)
 # t1 = TextNode("Hi this is a Test Babes", TextType.TEXT)

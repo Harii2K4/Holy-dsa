@@ -1,6 +1,7 @@
 import unittest
 
 from md_parser import (
+    md_to_block,
     extract_markdown_images,
     extract_markdown_links,
     split_nodes_delimiter,
@@ -290,3 +291,57 @@ class TestTexttoTestNode(unittest.TestCase):
         ]
 
         self.assertListEqual(expected_res, text_to_textnode(text))
+
+
+class TestMdToBlock(unittest.TestCase):
+    def test_md_block_proper_blocks(self):
+        md = """This is **bolded** paragraph
+
+This is another paragraph with _italic_ text and `code` here
+This is the same paragraph on a new line
+
+- This is a list
+- with items
+"""
+
+        blocks = md_to_block(md)
+
+        self.assertEqual(
+            blocks,
+            [
+                "This is **bolded** paragraph",
+                "This is another paragraph with _italic_ text and `code` here\nThis is the same paragraph on a new line",
+                "- This is a list\n- with items",
+            ],
+        )
+
+    def test_md_block_empty(self):
+        md = ""
+        blocks = md_to_block(md)
+        self.assertListEqual(blocks, [""])
+
+    def test_md_block_multiple_newline(self):
+        md = "\n\n\n\n"
+        blocks = md_to_block(md)
+        self.assertListEqual(blocks, ["", "", "", ""])
+
+    def test_md_block_leading_and_trailing_spaces_and_tabs(self):
+        md = """          This is **bolded** paragraph
+
+        This is another paragraph with _italic_ text and `code` here
+        This is the same paragraph on a new line
+
+- This is a list
+- with items
+           """
+
+        blocks = md_to_block(md)
+
+        self.assertEqual(
+            blocks,
+            [
+                "This is **bolded** paragraph",
+                "This is another paragraph with _italic_ text and `code` here\nThis is the same paragraph on a new line",
+                "- This is a list\n- with items",
+            ],
+        )
