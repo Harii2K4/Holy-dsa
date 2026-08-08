@@ -3,9 +3,39 @@ from htmlnode import HtmlNode, ParentNode, LeafNode
 from textnode import text_node_to_html_node
 
 
-def block_type_to_tag_and_normilize(
-    block_type: BlockType, content: str
-) -> tuple[str, str]:
+def normilize_block(content: str, type: BlockType) -> str:
+    match type:
+        case BlockType.HEADING:
+            idx = 0
+            while content[idx] == "#":
+                idx += 1
+            if not idx < 6:
+                raise ValueError(f"Not a proper heading:{content}")
+            return content[idx + 1 :]
+        case BlockType.OL_LIST:
+            res = []
+            for line in content.split("\n"):
+                res.append(line[3:])
+            return "\n".join(res)
+        case BlockType.UL_LIST:
+            res = []
+            for line in content.split("\n"):
+                res.append(line.strip("-"))
+            return "\n".join(res)
+        case BlockType.PARAGRAPH:
+            return content
+        case BlockType.QUOTE:
+            res = []
+            for line in content.split("\n"):
+                res.append(line.lstrip(">"))
+            return "\n".join(res)
+        case BlockType.CODE:
+            return content.strip("```")
+        case _:
+            raise TypeError("Invalid block type")
+
+
+def block_type_to_tag(block_type: BlockType, content: str) -> str:
     match block_type:
         case BlockType.HEADING:
             idx = 0
@@ -13,39 +43,33 @@ def block_type_to_tag_and_normilize(
                 idx += 1
             if not idx < 6:
                 raise ValueError(f"Not a proper heading:{content}")
-            return f"h{idx}", content[idx:]
+            return f"h{idx}"
         case BlockType.OL_LIST:
-            res = []
-            for line in content.split("\n"):
-                res.append(line[3])
-            return "ol", "\n".join(res)
+            return "ol"
         case BlockType.UL_LIST:
-            res = []
-            for line in content.split("\n"):
-                res.append(line.strip("-"))
-            return "ul", "\n".join(res)
+            return "ul"
         case BlockType.PARAGRAPH:
-            return "p", content
+            return "p"
         case BlockType.QUOTE:
-            return "blockquote", content.lstrip(">")
+            return "blockquote"
         case BlockType.CODE:
-            return "code", content.strip("```")
+            return "code"
         case _:
             raise TypeError("Invalid block type")
 
 
 def get_children(block_content: str, type: BlockType) -> list[HtmlNode]:
     lines = block_content.split("\n")
-    split_textnodes = []
+    result_nodes = []
     for line in lines:
-        split_textnodes.extend(text_to_textnode(line + " "))
-    children = list(map(text_node_to_html_node, split_textnodes))
-    if type == BlockType.UL_LIST or type == BlockType.OL_LIST:
-        for child in children:
-            if child.tag is None:
-                child.tag = "li"
+        text_nodes = text_to_textnode(line.strip(" "))
+        children_nodes = list(map(text_node_to_html_node, text_nodes))
+        if type == BlockType.UL_LIST or type == BlockType.OL_LIST:
+            result_nodes.append(ParentNode("li", children=children_nodes))
+        else:
+            result_nodes.extend(children_nodes)
 
-    return children
+    return result_nodes
 
 
 def md_to_html_nodes(md_text: str) -> ParentNode:
@@ -53,10 +77,20 @@ def md_to_html_nodes(md_text: str) -> ParentNode:
     norm_md = md_text.strip(" ").strip("\n") + "\n"
 
     blocks = md_to_block(norm_md)
-    html_nodes = []
+
+    atomic_blocks = []
     for block in blocks:
         block_type = block_to_block_types(block)
-        tag, norm_block = block_type_to_tag_and_normilize(block_type, content=block)
+        if block_type == BlockType.HEADING:
+            atomic_blocks.extend(block.split("\n"))
+        else:
+            atomic_blocks.append(block)
+
+    html_nodes = []
+    for block in atomic_blocks:
+        block_type = block_to_block_types(block)
+        tag = block_type_to_tag(block_type, content=block)
+        norm_block = normilize_block(block, block_type)
         if block_type == BlockType.CODE:
             html_nodes.append(
                 ParentNode(tag="pre", children=[LeafNode(tag=tag, value=norm_block)])
@@ -70,17 +104,12 @@ def md_to_html_nodes(md_text: str) -> ParentNode:
     return root_node
 
 
-md = """
-            This is **bolded** paragraph
-            text in a p
-            tag here
-
-            This is another paragraph with _italic_ text and `code` here
-"""
-# md = """
-#         - one oh this has **bold** btw
-#         - two
-#         - three
-# """
+# curr_dir = os.getcwd()
+# content_dir = os.path.join(curr_dir, "src", "content")
 #
-print(md_to_html_nodes(md).to_html())
+#
+# index_file_md = os.path.join(content_dir, "index.md")
+#
+# with open(index_file_md, "r") as f:
+#     content = f.read()
+# print(md_to_html_nodes(content).to_html())

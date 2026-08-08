@@ -36,8 +36,7 @@ class LeafNode(HtmlNode):
 
     def to_html(self) -> str:
         if not self.tag:
-            assert self.value
-            return self.value
+            return self.value if self.value else ""
         if self.tag == "img":
             return f"<{self.tag}{self.props_to_html()}>"
         assert self.value
