@@ -13,8 +13,8 @@ def copy_static_to_public(src_dir: str, dest_dir: str):
             os.mkdir(curr_dest_path)
             copy_static_to_public(curr_src_path, curr_dest_path)
         else:
-            print(f"copying file :{os.path.join(src_dir, item)}")
-            shutil.copy(os.path.join(src_dir, item), os.path.join(dest_dir, item))
+            print(f"copying file :{curr_src_path}")
+            shutil.copy(curr_src_path, curr_dest_path)
 
 
 def extract_title(md: str) -> str:
@@ -33,6 +33,37 @@ def extract_title(md: str) -> str:
             return line[2:]
 
     raise Exception("Start the markdown with a h1 header")
+
+
+def build_site(src_path: str, dest_path: str, template_content: str):
+
+    for item in os.listdir(src_path):
+        curr_src_path = os.path.join(src_path, item)
+
+        if os.path.isdir(curr_src_path):
+            print(f"Making dir :{curr_src_path}")
+            curr_dest_path = os.path.join(dest_path, item)
+            os.mkdir(curr_dest_path)
+            build_site(curr_src_path, curr_dest_path, template_content)
+        else:
+            if not item.endswith(".md"):
+                print(f"The file is not md so cant convert: {curr_src_path}")
+                continue
+
+            print(f"Converting file to html :{curr_src_path}")
+            new_name = item[:-2] + "html"
+            curr_dest_path = os.path.join(dest_path, new_name)
+            with open(curr_src_path, "r") as f:
+                content = f.read()
+
+            title = extract_title(content)
+            div_object = md_to_html_nodes(content)
+            file_content = template_content.format(
+                Title=title, Content=div_object.to_html()
+            )
+            with open(curr_dest_path, "w") as f:
+                print(f"Write file content :{curr_dest_path}")
+                f.write(file_content)
 
 
 def main():
@@ -63,22 +94,9 @@ def main():
     with open(template_path, "r") as f:
         template_content = f.read()
 
-    index_file_md = os.path.join(content_dir, "index.md")
-
-    with open(index_file_md, "r") as f:
-        content = f.read()
-
-    title = extract_title(content)
-    div_object = md_to_html_nodes(content)
-    file_content = template_content.format(Title=title, Content=div_object.to_html())
-
-    # save the file
-    dest_path = os.path.join(public_dir, "index.html")
-    with open(dest_path, "w") as f:
-        print(f"Write file content :{dest_path}")
-        f.write(file_content)
-
-    # public_dir = os.path.join(curr_dir, "public")
+    print("----------Building Site-----------")
+    build_site(content_dir, public_dir, template_content)
+    print("----------Starting Server-----------")
 
 
 if __name__ == "__main__":
