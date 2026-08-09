@@ -11,23 +11,23 @@ def normilize_block(content: str, type: BlockType) -> str:
                 idx += 1
             if not idx < 6:
                 raise ValueError(f"Not a proper heading:{content}")
-            return content[idx + 1 :]
+            return content[idx + 1 :].lstrip(" ")
         case BlockType.OL_LIST:
             res = []
             for line in content.split("\n"):
-                res.append(line[3:])
+                res.append(line[3:].lstrip(" "))
             return "\n".join(res)
         case BlockType.UL_LIST:
             res = []
             for line in content.split("\n"):
-                res.append(line.strip("-"))
+                res.append(line.strip("-").lstrip(" "))
             return "\n".join(res)
         case BlockType.PARAGRAPH:
-            return content
+            return content.lstrip(" ")
         case BlockType.QUOTE:
             res = []
             for line in content.split("\n"):
-                res.append(line.lstrip(">"))
+                res.append(line.lstrip(">").lstrip(" "))
             return "\n".join(res)
         case BlockType.CODE:
             return content.strip("```")
@@ -62,12 +62,13 @@ def get_children(block_content: str, type: BlockType) -> list[HtmlNode]:
     lines = block_content.split("\n")
     result_nodes = []
     for line in lines:
-        text_nodes = text_to_textnode(line.strip(" "))
+        text_nodes = text_to_textnode(line + " ")
         children_nodes = list(map(text_node_to_html_node, text_nodes))
         if type == BlockType.UL_LIST or type == BlockType.OL_LIST:
             result_nodes.append(ParentNode("li", children=children_nodes))
         else:
             result_nodes.extend(children_nodes)
+    print(result_nodes)
 
     return result_nodes
 
@@ -102,14 +103,3 @@ def md_to_html_nodes(md_text: str) -> ParentNode:
 
     root_node = ParentNode(tag="div", children=html_nodes)
     return root_node
-
-
-# curr_dir = os.getcwd()
-# content_dir = os.path.join(curr_dir, "src", "content")
-#
-#
-# index_file_md = os.path.join(content_dir, "index.md")
-#
-# with open(index_file_md, "r") as f:
-#     content = f.read()
-# print(md_to_html_nodes(content).to_html())
